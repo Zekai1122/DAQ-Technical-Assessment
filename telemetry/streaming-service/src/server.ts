@@ -1,5 +1,6 @@
 import net from "net";
 import { WebSocket, WebSocketServer } from "ws";
+import { TemWarning } from './warning';
 
 interface VehicleData {
   battery_temperature: number;
@@ -17,14 +18,18 @@ tcpServer.on("connection", (socket) => {
   socket.on("data", (msg) => {
     console.log(`Received: ${msg.toString()}`);
 
-    const jsonData: VehicleData = JSON.parse(msg.toString());
-
-    // Send JSON over WS to frontend clients
-    websocketServer.clients.forEach(function each(client) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(msg.toString());
-      }
-    });
+    try {
+      const jsonData: VehicleData = JSON.parse(msg.toString());
+      TemWarning(jsonData);
+      // Send JSON over WS to frontend clients
+      websocketServer.clients.forEach(function each(client) {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(msg.toString());
+        }
+      });
+    } catch (SyntaxError) {
+      console.log('SyntaxError');
+    }
   });
 
   socket.on("end", () => {
